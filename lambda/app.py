@@ -4,6 +4,9 @@ from boto3.dynamodb.conditions import Key
 import time
 import os
 import openai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Servicios AWS
 bedrock = boto3.client('bedrock-runtime', region_name='eu-central-1')
@@ -394,3 +397,9 @@ def openai_response(prompt, user_query):
     model_response = response.choices[0].message.content.strip()
     print(f"Respuesta de OpenAI: {model_response}")
     return model_response
+    
+
+if __name__ == "__main__":
+    event = {"body": json.dumps({"query": "Que es python?", "session_id": "test-session", "model": "bedrock"})}
+    response = lambda_handler(event, None)
+    print(response["body"])
