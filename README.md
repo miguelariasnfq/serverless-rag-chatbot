@@ -95,3 +95,19 @@ La función Lambda principal (``app.py``) orquesta la lógica del chatbot siguie
     - Guarda la consulta y la respuesta en **DynamoDB**, asociadas al ``session_id`` y un ``timestamp``.
 
 Además, también existen dos funciones Lambda auxiliares que se encargan de mantener el flujo de los documentos de las Knowledge Base. Una de ellas es la encargada de, mediante la conexión a la interfaz web, subir los documentos a S3. La otra función, que se activa mediante un *trigger* cuando el bucket de S3 recibe un nuevo documento del usuario, se encarga de invocar un agente que sincronice la Knowledge Base con los nuevos documentos de forma que se generen los embeddings necesarios para poder obtener información de estos también. Las funciones encargadas de esto son ``uploadFile.py`` y ``syncKnowledgeBase.py``, respectivamente.
+
+Finalmente, se debe configurar el **API Gateway**:
+  - Crea una ``REST API`` dentro de el recurso API Gateway de AWS.
+  - Genera una URL base
+  - Configura dos recursos:
+    - ``/chatbot``: Conecta esta ruta al método POST de la Lambda principal ``app.py`` para procesar las consultas del usuario.
+    - ``/upload``: Conecta esta ruta al método POST de la Lambda encargada de subir documentos.
+  - Habilita CORS para permitir solicitudes desde el frontend de Streamlit.
+  - Despliega la API en un stage y obtén la URL completa.
+
+## Instalación y Configuración
+1. **Ejecutar Streamlit**
+   ```
+   streamlit run front/fronAWS.py
+   ```
+   
