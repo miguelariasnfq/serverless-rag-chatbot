@@ -1,6 +1,6 @@
 # Chatbot serverless con RAG en AWS 
 ## Descripción
-Este proyecto que implementa **Chatbot Serverless con Retrieval-Augmented Generation (RAG)** está diseñado para responder preguntas a los usuarios de forma ajustable a cualquier tema, adaptándose al dominio específico definido por las instrucciones del modelo y los documentos almacenados en una base de conocimiento. Este proyecto se desarrolla mediante una arquitectua serverless en Amazon Web Services (AWS) y permite a los usuarios interactuar a través de una interfaz web, cargar documentos *(PDF, TXT, DOCX)* para ajustar la base de conocimiento según el tema de interés de cada usuario específico y elegir entre distintos modelos de lenguaje para generar las respuestas.
+Este proyecto que implementa **Chatbot Serverless con Retrieval-Augmented Generation (RAG)** está diseñado para responder preguntas a los usuarios de forma ajustable a cualquier tema, adaptándose al dominio específico definido por las instrucciones del modelo y los documentos almacenados en una base de conocimiento. Este proyecto se desarrolla mediante una arquitectura serverless en Amazon Web Services (AWS) y permite a los usuarios interactuar a través de una interfaz web, cargar documentos *(PDF, TXT, DOCX)* para ajustar la base de conocimiento según el tema de interés de cada usuario específico y elegir entre distintos modelos de lenguaje para generar las respuestas.
 ## Objetivo Principal
 El objetivo del proyecto es proporcionar una herramienta flexible y personalizable que ofrezca respuestas precisas y contextualmente relevantes a preguntas sobre cualquier tema para el que sea preparado. 
 ## Características Principales
@@ -34,7 +34,7 @@ La arquitectura del proyecto es completamente serverless y está desplegada en A
 Antes de desplegar el chatbot, es necesario configurar los siguientes recursos en AWS para que la aplicación funcione correctamente:
 - **Bucket de S3**:
     - Crea un bucket en S3 para almacenar los documentos que alimentan la base de conocimientos.
-    - Sube documentos fijos iniciales que definan el conocimiento base del chatbot. Estos documentos pueden ser sorbre cualquier tema en el que desees especializar el chatbot.
+    - Sube documentos fijos iniciales que definan el conocimiento base del chatbot. Estos documentos pueden ser sobre cualquier tema en el que desees especializar el chatbot.
     - Configura permisos para que el bucket sea accesible por los servicios de Bedrock.
 - **Tabla en DynamoDB**:
     - Crea una tabla de DynamoDB para almacenar el historial de conversaciones.
@@ -61,14 +61,14 @@ Antes de desplegar el chatbot, es necesario configurar los siguientes recursos e
   - Genera dos *data sources*, uno para los documentos fijos de la base de conocimientos y otro para los documentos que suban los usuarios.
   - Configura un modelo de embeddings para generar vectores y selecciona el tamaño y overlap de tus chunks. Tienes dos opciones:
     - Utilizar los modelos de Amazon (como Titan Text Embeddings V2). Vienen con una estructura definida y tamaños de chunk predeterminados.
-    - Generar una función Lamdba que personalice todo este proceso y amplie las posibilidades y opciones a utilizar.
+    - Generar una función Lambda que personalice todo este proceso y amplie las posibilidades y opciones a utilizar.
   - Elige la base de datos vectorial que más se ajuste a tus necesidades.
     - Si utilizas Pinecone conecta la api_key mediante AWS Secrets Manager.
   - Sincroniza los documentos para que se generen los embedding y habilitar búsquedas por coseno.
   - Obtén el ``KB_ID`` para utiliarlo posteriormente en la función Lambda.
 - **Configurar variables de entorno**:
   - Para hacer pruebas en local crea un archivo ``.env`` con las variables obtenidas en los pasos previos.
-  - Para añadir estas variables de entorno a tu lambda en la consola y utilizar la interfaz web puedes hacerlo desde la pestaña de ``Configuración``>``Variables de entorno``.
+  - Para añadir estas variables de entorno a tu lambda en la consola, y así utilizar la interfaz web puedes hacerlo desde la pestaña de ``Configuración``>``Variables de entorno``.
 ### Flujo de trabajo de Lambda
 La función Lambda principal (``app.py``) orquesta la lógica del chatbot siguiendo estos pasos:
 1. **Recibir y validar la consulta**:
@@ -105,9 +105,17 @@ Finalmente, se debe configurar el **API Gateway**:
   - Habilita CORS para permitir solicitudes desde el frontend de Streamlit.
   - Despliega la API en un stage y obtén la URL completa.
 
+A continuación, se muestra un esquema del flujo que podría seguir esta arquitectura:
+  
+![Esquema de la arquitectura](images\arquitecturaV1_AWS_chatbot.png)
+
+
 ## Instalación y Configuración
 1. **Ejecutar Streamlit**
    ```
    streamlit run front/fronAWS.py
    ```
    
+## Próximos pasos / Mejoras posibles
+- Añadir autenticación para usuarios.
+- Implementar cache de consultas frecuentes.
