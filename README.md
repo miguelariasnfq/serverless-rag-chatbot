@@ -29,7 +29,69 @@ La arquitectura del proyecto es completamente serverless y está desplegada en A
 |  | ``Pinecone``: Alternativa más asequible para almacenamiento limitado en su versión gratuita | 
 | **DynamoDB** | Almacena el historial de la conversación para mantener el contexto | 
 | **S3** | Almacena documentos subidos por los usuarios, que se sincronizan con la Knowledge Base para especializar el chatbot en el tema deseado | 
-## Flujo de Trabajo 
+## Flujo de Trabajo y Pasos a Seguir 
+### Requisitos previos:
+Antes de desplegar el chatbot, es necesario configurar los siguientes recursos en AWS para que la aplicación funcione correctamente:
+- **Bucket de S3**:
+    - Crea un bucket en S3 para almacenar los documentos que alimentan la base de conocimientos.
+    - Sube documentos fijos iniciales que definan el conocimiento base del chatbot. Estos documentos pueden ser sorbre cualquier tema en el que desees especializar el chatbot.
+    - Configura permisos para que el bucket sea accesible por los servicios de Bedrock.
+- **Tabla en DynamoDB**:
+    - Crea una tabla de DynamoDB para almacenar el historial de conversaciones.
+    - Configura la clave primaria (partition key) como ``session_id``  y una clave de ordenacion ``timestamp`` para organizar las interacciones por ID de sesión y orden temporal.
+    - Asegúrate de que el rol de ejecución de Lambda tenga permisos para operaciones ``PutItem`` y ``Query`` en esta tabla`.
+- **Bedrock Guardrails**:
+  - Crea un Guardrail para restringir consultas a las que no quieras que el modelo genere una respuesta.
+  - Configura reglas para bloquear contenido fuera de tema o sensible y establece una versión
+  - Anota el ``GUARDRAIL_ID`` para usarlo posteriormente.
+- **Bedrock Agent**:
+  - Crea un agente con Bedrock para clasificar las consultas en *SIMPLE, COMPLEJO o NULO*.
+  - Configura el agente con un modelo de clasificación (por ejemplo, Claude) y define instrucciones para clasificar consultas según su complejidad.
+  - Publica el agente y obtén el ``AGENT_ID`` y ``AGENT_ALIAS_ID`` para usarlos en la Lambda.
+- **Bedrock Knowledge Base**:
+  - Crea una Knowledge Base en Bedrock para gestionar los documentos subidos.
+  - Agrega permisos que permitan el uso completo de esta herramienta:
+    - AmazonBedrockFullAccess
+    - AmazonOpenSearchServiceFullAccess
+    - AmazonS3FullAccess
+    - EmbeddingG1
+    - OpenSearchServerless
+    - SecretsManagerReadWrite
+  - Conecta la Knowledge Base al bucket de S3 creado anteriormente.
+  - Genera dos *data sources*, uno para los documentos fijos de la base de conocimientos y otro para los documentos que suban los usuarios.
+  - Configura un modelo de embeddings para generar vectores y selecciona el tamaño y overlap de tus chunks. Tienes dos opciones:
+    - Utilizar los modelos de Amazon (como Titan Text Embeddings V2). Vienen con una estructura definida y tamaños de chunk predeterminados.
+    - Generar una función Lamdba que personalice todo este proceso y amplie las posibilidades y opciones a utilizar.
+  - Elige la base de datos vectorial que más se ajuste a tus necesidades.
+    - Si utilizas Pinecone conecta la api_key mediante AWS Secrets Manager.
+  - Sincroniza los documentos para que se generen los embedding y habilitar búsquedas por coseno.
+  - Obtén el ``KB_ID`` para utiliarlo posteriormente en la función Lambda.
+- **Configurar variables de entorno**:
+  - Para hacer pruebas en local crea un archivo ``.env`` con las variables obtenidas en los pasos previos.
+  - Para añadir estas variables de entorno a tu lambda en la consola y utilizar la interfaz web puedes hacerlo desde la pestaña de ``Configuración``>``Variables de entorno``.
+### Flujo de trabajo de Lambda
+La función Lambda principal (``app.py``) orquesta la lógica del chatbot siguiendo estos pasos:
+1. **Recibir y validar la consulta**:
+    - Recibe un evento HTTP con la consulta del usuario, el ID de sesión y el modelo seleccionado.
+    - Valida que estos parámetros estén presentes.
+2. **Aplicar Guardrails**:
+    - Usa Bedrock Guardrails para filtrar la consulta según las reglas configuradas.
+    - Si la consulta no cumple (acción: ``GUARDRAIL_INTERVENED``), devuelve un mensaje indicando que está fuera de ámbito.
+3. **Clasificar la consulta**:
+    - Invoca el Bedrock Agent para clasificar la consulta. Primero de todo analiza si esta se ajusta al tema definido, añadiendo así una capa extra de seguridad.
+    - En caso de validar la consulta, la clasifica en *SIMPLE o COMPLEX*
+4. **Procesar según clasificación**:
+    - Si es ``NULL``: Devuelve un mensaje indicando que la consulta no puede ser procesada.
+    - Si es ``SIMPLE`` o ``COMPLEX``:
+      - Recupera el historial de conversación desde DynamoDB usando ``session_id``.
+      - Para ``COMPLEX``, recupera los chunks relevantes de la Knowledge Base.
+      - Formatea un prompt con el historial y el contexto (si aplica).
+5. **Generar y devolver respuesta:**:
+    - Si el modelo seleccionado es ``bedrock``, invoca Claude a través de Bedrock para generar la respuesta.
+    - Si es ``openai``, usa la API de OpenAI (GPT-4.1 mini) para generar la respuesta.
+    - Para consultas ``COMPLEX``, añade referencias a los documentos de los que se obtuvo la información de la base de conocimiento (URLs públicas de S3 y número de página).
+    - Muestra al usuario la respuesta generada por pantalla
+6. **Almacenar interacción:**:
+    - Guarda la consulta y la respuesta en **DynamoDB**, asociadas al ``session_id`` y un ``timestamp``.
 
-
-
+Además, también existen dos funciones Lambda auxiliares que se encargan de mantener el flujo de los documentos de las Knowledge Base. Una de ellas es la encargada de, mediante la conexión a la interfaz web, subir los documentos a S3. La otra función, que se activa mediante un *trigger* cuando el bucket de S3 recibe un nuevo documento del usuario, se encarga de invocar un agente que sincronice la Knowledge Base con los nuevos documentos de forma que se generen los embeddings necesarios para poder obtener información de estos también. Las funciones encargadas de esto son ``uploadFile.py`` y ``syncKnowledgeBase.py``, respectivamente.
