@@ -3,8 +3,8 @@ import requests
 import uuid  
 import base64
 
-# 🔹 AWS API Gateway Configuration (Replace with your actual API Gateway URL)
-BASE_URL = "https://dkjn2gd5f8.execute-api.eu-central-1.amazonaws.com/dev" 
+# 🔹 AWS API Gateway Configuration 
+BASE_URL = "https://dkjn2gd5f8.execute-api.eu-central-1.amazonaws.com/dev" #Actualmente se puede acceder a la interfaz pero las conexiones con los recursos se encuentran apagadas.
 CHATBOT_FUNCTION = f"{BASE_URL}/chatbot"
 UPLOAD_DOCUMENT_FUNCTION = f"{BASE_URL}/upload"
 

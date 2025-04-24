@@ -7,7 +7,7 @@ s3 = boto3.client("s3")
 BUCKET_NAME = "bedrock-rag-prueba"
 
 def lambda_handler(event, context):
-    """Handles file uploads from Streamlit (multipart/form-data) and saves them to S3."""
+    """Gestiona la carga de archivos desde Streamlit y los guarda en S3."""
     try:
         if "body" not in event:
             return {"statusCode": 400, "body": json.dumps({"error": "Missing request body"})}

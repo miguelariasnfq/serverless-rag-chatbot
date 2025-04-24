@@ -398,8 +398,8 @@ def openai_response(prompt, user_query):
     print(f"Respuesta de OpenAI: {model_response}")
     return model_response
     
-
+#Funcion main para hacer pruebas en local sin el CLI. No añadir a la lambda desplegada en AWS
 if __name__ == "__main__":
-    event = {"body": json.dumps({"query": "Que es python?", "session_id": "test-session", "model": "bedrock"})}
+    event = {"body": json.dumps({"query": "Que es un match en python?", "session_id": "test-session", "model": "bedrock"})}
     response = lambda_handler(event, None)
     print(response["body"])

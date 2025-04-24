@@ -105,11 +105,11 @@ Finalmente, se debe configurar el **API Gateway**:
   - Habilita CORS para permitir solicitudes desde el frontend de Streamlit.
   - Despliega la API en un stage y obtén la URL completa.
 
-A continuación, se muestra un esquema del flujo que podría seguir esta arquitectura:
+A continuación, se muestra un esquema que representa la arquitectura del proyecto y el flujo que este sigue:
   
-![Esquema de la arquitectura](images\arquitecturaV1_AWS_chatbot.png)
+![Esquema de la arquitectura](images/arquitecturaV1_AWS_chatbot.png)
 
-
+# POR COMPLETAR
 ## Instalación y Configuración
 1. **Ejecutar Streamlit**
    ```
